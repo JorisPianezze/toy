@@ -9,9 +9,7 @@ LIBPSMILE = $(ARCHDIR)/lib/libpsmile.${CHAN}.a $(ARCHDIR)/lib/libmct.a $(ARCHDIR
 # DECOMP_APPLE for 1D decomposition
 # DECOMP_BOX for 2D decomposition
 CPPKEYDECOMP=DECOMP_APPLE
-#
-# Precision for REAL: USE_DOUBLE_PRECISION or NO_USE_DOUBLE_PRECISION
-CPPKEYDP=NO_USE_DOUBLE_PRECISION
+
 ################################################################################
 #
 CPPLOCAL = -D${CPPKEYDECOMP} -D${CPPKEYDP}

@@ -1,38 +1,33 @@
-!!##############################################################################
-PROGRAM TOY_MODEL
-!!##############################################################################
-!!
-!!---------------------------------------------------------------------
-!!
-!! ** PURPOSE : Toy model for coupling
-!!
-!! ** AUTHOR :
-!!        ORIGINAL: tuto, CERFACS
-!!
-!!------------------------------------------------------------------------
-!! Copyright 2010, CERFACS, Toulouse, France.
-!! All rights reserved. Use is subject to OASIS3 license terms.
-!=============================================================================
-!!
-!!        2014-03 : J. PIANEZZE (LPO) : Modification
-!!        2015-02                       Update of routines
-!!        2015-04                       Add namelist file
-!!
-!!---------------------------------------------------------------------
-!!
+! #########################################################
+PROGRAM toy_model
+! #########################################################
+
+! ---------------------------------------------------------
 !
+!             Toy model for OASIS's coupling
+!
+! --------------------------------------------------------
+
+! ========================================================
+!                List of modifications
+!
+!        2014-10 : CERFACS             - OASIS's tuto
+!        2015-02 : J. Pianezze (  LPO) - Add forcing file
+!        2015-04 : J. Pianezze (  LPO) - Add namelist file
+!        2023-10 : J. Pianezze (LAERO) - Refactoring/Cleaning
+!
+! ========================================================
+
+! ------------------------------------------------------------------------------
 USE NETCDF
-USE MOD_OASIS ! Use for OASIS communication library
-!
+USE MOD_OASIS
+! ------------------------------------------------------------------------------
+
 IMPLICIT NONE
-!
+
 INCLUDE 'mpif.h'
-!
-#ifdef NO_USE_DOUBLE_PRECISION
-  INTEGER, PARAMETER :: WP = SELECTED_REAL_KIND(6,37)   ! real
-#elif USE_DOUBLE_PRECISION
-  INTEGER, PARAMETER :: WP = SELECTED_REAL_KIND(12,307) ! double
-#endif
+
+INTEGER, PARAMETER :: WP = SELECTED_REAL_KIND(6,37)   ! real
 !
 CHARACTER(LEN=6) :: CMODEL_NAME = 'toyexe' ! Component name (6 characters) same as in the namcouple
 INTEGER :: ICOMP_ID
@@ -82,7 +77,7 @@ INTEGER :: VAR_TYPE
 INTEGER :: VAR_ACTUAL_SHAPE(4) ! local dimensions of the arrays to the pe
                                ! 2 x field rank (= 4 because fields are of rank = 2)
 !
-REAL (KIND=WP), PARAMETER :: FIELD_INI = -1. ! initialisation of received fields
+REAL, PARAMETER :: FIELD_INI = -1. ! initialisation of received fields
 !
 INTEGER :: IB, IND
 INTEGER :: IL_NB_TIME_STEPS ! number of time steps
@@ -91,8 +86,8 @@ INTEGER :: ITAP_SEC         ! Time
 !
 ! Exchanged local fields arrays
 ! used in routines oasis_put and oasis_get
-REAL(KIND=WP), POINTER :: FIELD_RECV(:,:)
-REAL(KIND=WP), POINTER :: FIELD_SEND(:,:,:)
+REAL, POINTER :: FIELD_RECV(:,:)
+REAL, POINTER :: FIELD_SEND(:,:,:)
 !
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Open a flog file
@@ -332,6 +327,6 @@ ENDIF
 CLOSE(UNIT=IOUTDIAG_UNIT)
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
-!############################################################################
-END PROGRAM TOY_MODEL
-!############################################################################
+! ##############################################################################
+END PROGRAM toy_model
+! ##############################################################################
