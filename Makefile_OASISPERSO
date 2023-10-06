@@ -1,5 +1,5 @@
 ################################################################################
-include ${SRC_MESONH}/src/LIB/oasis3-mct_5.0/util/make_dir/make.inc
+include ${OASISDIR}/../util/make_dir/make.inc
 LIBPSMILE = $(ARCHDIR)/lib/libpsmile.${CHAN}.a $(ARCHDIR)/lib/libmct.a $(ARCHDIR)/lib/libmpeu.a $(ARCHDIR)/lib/libscrip.a
 #
 ##### User configurable options #####
