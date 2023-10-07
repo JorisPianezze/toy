@@ -12,7 +12,7 @@ CPPKEYDECOMP=DECOMP_APPLE
 
 ################################################################################
 #
-CPPLOCAL = -D${CPPKEYDECOMP} -D${CPPKEYDP}
+CPPLOCAL = -D${CPPKEYDECOMP}
 #
 OBJ =  routine_hdlerr.o read_dimgrid.o  \
        read_grid.o read_forcing.o read_namelist.o decomp_def.o \

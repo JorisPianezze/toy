@@ -1,16 +1,20 @@
 ! #########################################################
-SUBROUTINE READ_NAMELIST(IOUTDIAG_UNIT,IL_NB_TIME_STEPS, DELTA_T, &
+SUBROUTINE read_namelist(output_unit,IL_NB_TIME_STEPS, DELTA_T, &
                          DATA_FILENAME, &
                          CTYPE_FCT, VALUE, CNAME_FILE, &
                          NB_RECV_FIELDS, CRCVFIELDS, &
                          NB_SEND_FIELDS, CSNDFIELDS )
 ! #########################################################
+
+! ---------------------------------------------------------
 !
+!        Read namelist TOYNAMELIST.nam
+!
+! --------------------------------------------------------
+
 IMPLICIT NONE
-!
-!
-INTEGER :: IOUTDIAG_UNIT
-INTEGER :: IND
+
+INTEGER, INTENT(IN) :: output_unit
 !
 !-- NAM_OASIS
 INTEGER, INTENT(OUT) :: IL_NB_TIME_STEPS ! number of time steps
@@ -32,6 +36,8 @@ INTEGER, INTENT(OUT) :: NB_SEND_FIELDS
 INTEGER, PARAMETER :: NB_SEND_FIELDS_MAX=10
 CHARACTER(LEN=8), DIMENSION(NB_SEND_FIELDS_MAX), INTENT(OUT) :: CSNDFIELDS
 !
+INTEGER :: ind_fields
+!
 NAMELIST /NAM_OASIS/ IL_NB_TIME_STEPS, DELTA_T, DATA_FILENAME
 NAMELIST /NAM_FCT_SEND/ CTYPE_FCT, VALUE, CNAME_FILE
 NAMELIST /NAM_RECV_FIELDS/ NB_RECV_FIELDS, CRCVFIELDS
@@ -45,22 +51,24 @@ READ(UNIT=10,NML=NAM_SEND_FIELDS)
 CLOSE(UNIT=10)
 !
 ! VERIFICATION
-WRITE(IOUTDIAG_UNIT,*) 'IL_NB_TIME_STEPS=', IL_NB_TIME_STEPS
-WRITE(IOUTDIAG_UNIT,*) 'DELTA_T=', DELTA_T
-WRITE(IOUTDIAG_UNIT,*) 'DATA_FILENAME=', DATA_FILENAME
+WRITE(output_unit,*) 'IL_NB_TIME_STEPS=', IL_NB_TIME_STEPS
+WRITE(output_unit,*) 'DELTA_T=', DELTA_T
+WRITE(output_unit,*) 'DATA_FILENAME=', DATA_FILENAME
 !
-WRITE(IOUTDIAG_UNIT,*) 'CTYPE_FCT=', CTYPE_FCT
-WRITE(IOUTDIAG_UNIT,*) 'VALUE=', VALUE
-WRITE(IOUTDIAG_UNIT,*) 'CNAME_FILE=', CNAME_FILE
+WRITE(output_unit,*) 'CTYPE_FCT=', CTYPE_FCT
+WRITE(output_unit,*) 'VALUE=', VALUE
+WRITE(output_unit,*) 'CNAME_FILE=', CNAME_FILE
 !
-WRITE(IOUTDIAG_UNIT,*) 'NB_RECV_FIELDS=', NB_RECV_FIELDS
-DO IND=1, NB_RECV_FIELDS
-  WRITE(IOUTDIAG_UNIT,*) 'CRCVFIELDS(',IND,')=', CRCVFIELDS(IND)
+WRITE(output_unit,*) 'NB_RECV_FIELDS=', NB_RECV_FIELDS
+DO ind_fields=1, NB_RECV_FIELDS
+  WRITE(output_unit,*) 'CRCVFIELDS(',ind_fields,')=', CRCVFIELDS(ind_fields)
 END DO
 !
-WRITE(IOUTDIAG_UNIT,*) 'NB_SEND_FIELDS=', NB_SEND_FIELDS
-DO IND=1, NB_SEND_FIELDS
-  WRITE(IOUTDIAG_UNIT,*) 'CSNDFIELDS(',IND,')=', CSNDFIELDS(IND)
+WRITE(output_unit,*) 'NB_SEND_FIELDS=', NB_SEND_FIELDS
+DO ind_fields=1, NB_SEND_FIELDS
+  WRITE(output_unit,*) 'CSNDFIELDS(',ind_fields,')=', CSNDFIELDS(ind_fields)
 END DO
-!
-END SUBROUTINE READ_NAMELIST
+
+! #########################################################
+END SUBROUTINE read_namelist
+! #########################################################

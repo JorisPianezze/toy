@@ -1,6 +1,7 @@
-!****************************************************************************************
+! #########################################################
 SUBROUTINE decomp_def(id_paral,id_size,id_im,id_jm,id_rank,id_npes,id_unit)
-  !
+! #########################################################
+
   IMPLICIT NONE
   INTEGER, DIMENSION(id_size), INTENT(out) :: id_paral(id_size)    
   INTEGER, INTENT(in)  :: id_size
@@ -47,6 +48,7 @@ SUBROUTINE decomp_def(id_paral,id_size,id_im,id_jm,id_rank,id_npes,id_unit)
   ENDIF
   !
 #endif
-  !
-END SUBROUTINE decomp_def
 
+! #########################################################
+END SUBROUTINE decomp_def
+! #########################################################

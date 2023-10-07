@@ -19,8 +19,8 @@ PROGRAM toy_model
 ! ========================================================
 
 ! ------------------------------------------------------------------------------
-USE NETCDF
-USE MOD_OASIS
+USE netcdf
+USE mod_oasis
 ! ------------------------------------------------------------------------------
 
 IMPLICIT NONE
@@ -33,13 +33,13 @@ CHARACTER(LEN=6) :: CMODEL_NAME = 'toyexe' ! Component name (6 characters) same 
 INTEGER :: ICOMP_ID
 INTEGER :: KLOCALCOMM, KSIZE, KRANK
 INTEGER :: IERR
-INTEGER :: IOUTDIAG_UNIT=51
+INTEGER :: output_unit=51
 !
 ! Global grid parameters for grid definition
 ! ----------------------------------------------------- 
 INTEGER :: NLON, NLAT     ! dimensions in the 2 directions of space
 INTEGER :: NTOT           ! total dimension
-INTEGER :: NC ! number of corners in the (i,j) plan
+INTEGER :: NCORNERS=4     ! number of corners
 INTEGER :: INDI_BEG, INDI_END, INDJ_BEG, INDJ_END
 INTEGER :: IL_FLAG          ! Flag for grid writing
 !
@@ -48,18 +48,18 @@ REAL, DIMENSION(:,:,:), POINTER :: GLOBALGRID_CLO,GLOBALGRID_CLA
 REAL, DIMENSION(:,:), POINTER :: GLOBALGRID_SRF
 INTEGER, DIMENSION(:,:), POINTER :: INDICE_MASK ! mask, 0 == valid point, 1 == masked point 
 !
-CHARACTER(LEN=30) :: DATA_FILENAME
+CHARACTER(LEN=30) :: grid_file_name
 !
 CHARACTER(LEN=5) :: CTYPE_FCT
 REAL :: VALUE
-CHARACTER(LEN=30) :: CNAME_FILE
+CHARACTER(LEN=30) :: CNAME_FILE=''
 !
 ! Global definition parition parameters
 ! -------------------------------------
 INTEGER :: PART_ID, IL_SIZE
 INTEGER, DIMENSION(:), ALLOCATABLE :: IL_PARAL ! Decomposition for each proc
 !
-! Global parameters for OASIS_DEF_VAR
+! Global parameters for oasis_def_var
 ! -----------------------------------
 !
 INTEGER :: NB_RECV_FIELDS
@@ -90,81 +90,71 @@ REAL, POINTER :: FIELD_RECV(:,:)
 REAL, POINTER :: FIELD_SEND(:,:,:)
 !
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-! Open a flog file
-OPEN(UNIT=IOUTDIAG_UNIT,FILE='OUTPUT_TOY.txt')
+OPEN(UNIT=output_unit,FILE='OUTPUT_TOY.txt')
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '   INITIALISATION'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '   INITIALISATION'
+WRITE(output_unit,*) '==========================================================================='
 !
-WRITE(IOUTDIAG_UNIT,*) '----- CALL OASIS_INIT_COMP'
+WRITE(output_unit,*) '----- CALL OASIS_INIT_COMP'
 CALL OASIS_INIT_COMP(ICOMP_ID,CMODEL_NAME,IERR)
 IF(IERR /= 0) THEN
-  CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR')
+  CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR')
 ENDIF
 !
-WRITE(IOUTDIAG_UNIT,*) '----- CALL OASIS_GET_LOCALCOMM'
+WRITE(output_unit,*) '----- CALL OASIS_GET_LOCALCOMM'
 CALL OASIS_GET_LOCALCOMM(KLOCALCOMM,IERR)
 IF(IERR /= 0) THEN
-  CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR')
+  CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR')
 ENDIF
 !
 ! Get MPI size and rank
 ! ---------------------
 CALL MPI_COMM_SIZE (KLOCALCOMM, KSIZE, IERR )
-WRITE(IOUTDIAG_UNIT,*) 'KSIZE=', KSIZE
+WRITE(output_unit,*) 'KSIZE=', KSIZE
 IF (IERR /= 0) THEN
-  WRITE(IOUTDIAG_UNIT,*) 'MPI_COMM_SIZE ABORT BY TOY MODEL COMPID ',ICOMP_ID
-  CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING MPI_COMM_SIZE')
+  WRITE(output_unit,*) 'MPI_COMM_SIZE ABORT BY TOY MODEL COMPID ',ICOMP_ID
+  CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING MPI_COMM_SIZE')
 ENDIF
 !
 CALL MPI_COMM_RANK (KLOCALCOMM, KRANK, IERR )
 IF (IERR /= 0) THEN
-  WRITE (IOUTDIAG_UNIT,*) 'MPI_COMM_RANK ABORT BY TOY MODEL COMPID ',ICOMP_ID
-  CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING MPI_COMM_RANK')
+  WRITE (output_unit,*) 'MPI_COMM_RANK ABORT BY TOY MODEL COMPID ',ICOMP_ID
+  CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING MPI_COMM_RANK')
 ENDIF
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    READING THE NAMELIST'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    Read TOYNAMELIST.nam'
+WRITE(output_unit,*) '==========================================================================='
 !
-CALL READ_NAMELIST(IOUTDIAG_UNIT,IL_NB_TIME_STEPS,DELTA_T, &
-                   DATA_FILENAME, &
+CALL read_namelist(output_unit,IL_NB_TIME_STEPS,DELTA_T, &
+                   grid_file_name, &
                    CTYPE_FCT, VALUE, CNAME_FILE, &
                    NB_RECV_FIELDS, CRCVFIELDS, &
                    NB_SEND_FIELDS, CSNDFIELDS)
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    GRID DEFINITION'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-!
-! Reading netcdf file with pre-defined variable names
-! ---------------------------------------------------
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    GRID DEFINITION'
+WRITE(output_unit,*) '==========================================================================='
+
 ! Reading dimensions of the grid
-CALL READ_DIMGRID(NLON,NLAT,DATA_FILENAME,IOUTDIAG_UNIT)
-NC=4
-!
+CALL READ_DIMGRID(grid_file_name,NLON,NLAT,output_unit)
+
 ! Allocation
-ALLOCATE(GLOBALGRID_LON(NLON,NLAT), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating GLOBALGRID_LON'
-ALLOCATE(GLOBALGRID_LAT(NLON,NLAT), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating GLOBALGRID_LAT'
-ALLOCATE(GLOBALGRID_CLO(NLON,NLAT,nc), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating GLOBALGRID_CLO'
-ALLOCATE(GLOBALGRID_CLA(NLON,NLAT,nc), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating GLOBALGRID_CLA'
-ALLOCATE(GLOBALGRID_SRF(NLON,NLAT), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating GLOBALGRID_SRF'
-ALLOCATE(INDICE_MASK(NLON,NLAT), STAT=IERR )
-IF ( IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'Error allocating INDICE_MASK'
-!
+ALLOCATE(GLOBALGRID_LON(NLON,NLAT))
+ALLOCATE(GLOBALGRID_LAT(NLON,NLAT))
+ALLOCATE(GLOBALGRID_CLO(NLON,NLAT,NCORNERS))
+ALLOCATE(GLOBALGRID_CLA(NLON,NLAT,NCORNERS))
+ALLOCATE(GLOBALGRID_SRF(NLON,NLAT))
+ALLOCATE(INDICE_MASK(NLON,NLAT))
+
 ! Reading of the longitudes, latitudes, longitude and latitudes of the corners, mask of the grid
-CALL READ_GRID(NLON,NLAT,NC,DATA_FILENAME,IOUTDIAG_UNIT, &
+CALL READ_GRID(grid_file_name,NLON,NLAT,NCORNERS, &
                GLOBALGRID_LON,GLOBALGRID_LAT, &
                GLOBALGRID_CLO,GLOBALGRID_CLA, &
                GLOBALGRID_SRF, &
-               INDICE_MASK)
+               INDICE_MASK,output_unit)
 !
 ! (Global) grid definition for OASIS3
 ! Writing of the file grids.nc and masks.nc by the processor 0 from the grid read in 
@@ -187,9 +177,9 @@ IF (KRANK == 0) THEN
   !
 ENDIF
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    PARTITION DEFINITION'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    PARTITION DEFINITION'
+WRITE(output_unit,*) '==========================================================================='
 !
 ! Definition of the partition of the grid (calling oasis_def_partition)
 NTOT=NLON*NLAT
@@ -201,16 +191,16 @@ NTOT=NLON*NLAT
 #endif
 !
 ALLOCATE(IL_PARAL(IL_SIZE))
-WRITE(IOUTDIAG_UNIT,*) 'After allocate il_paral, il_size', IL_SIZE
+WRITE(output_unit,*) 'After allocate il_paral, il_size', IL_SIZE
 !
-CALL DECOMP_DEF(IL_PARAL,IL_SIZE,NLON,NLAT,KRANK,KSIZE,IOUTDIAG_UNIT)
-WRITE(IOUTDIAG_UNIT,*) 'After decomp_def, il_paral = ', IL_PARAL(:)
+CALL DECOMP_DEF(IL_PARAL,IL_SIZE,NLON,NLAT,KRANK,KSIZE,output_unit)
+WRITE(output_unit,*) 'After decomp_def, il_paral = ', IL_PARAL(:)
 !
-CALL OASIS_DEF_PARTITION(PART_ID, IL_PARAL, IERR)
+CALL oasis_def_partition(PART_ID, IL_PARAL, IERR)
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    DEFINITION OF THE LOCAL FIELDS'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    DEFINITION OF THE LOCAL FIELDS'
+WRITE(output_unit,*) '==========================================================================='
 !
 ! Define transient variables
 !
@@ -230,33 +220,33 @@ VAR_ACTUAL_SHAPE(3) = 1
 !
 ! Declaration of the field associated with the partition of the grid
 DO IND=1, NB_RECV_FIELDS 
-  CALL OASIS_DEF_VAR(VAR_ID(IND),CRCVFIELDS(IND), PART_ID, &
+  CALL oasis_def_var(VAR_ID(IND),CRCVFIELDS(IND), PART_ID, &
                    VAR_NODIMS, OASIS_IN, VAR_ACTUAL_SHAPE, VAR_TYPE, IERR)
-  IF (IERR /= 0) CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR DURING DEFINITION OF RECV VAR')
+  IF (IERR /= 0) CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR DURING DEFINITION OF RECV VAR')
 ENDDO
 !
 DO IND=1, NB_SEND_FIELDS
-  CALL OASIS_DEF_VAR(VAR_ID(IND+NB_RECV_FIELDS),CSNDFIELDS(IND), PART_ID, &
+  CALL oasis_def_var(VAR_ID(IND+NB_RECV_FIELDS),CSNDFIELDS(IND), PART_ID, &
                    VAR_NODIMS, OASIS_OUT, VAR_ACTUAL_SHAPE, VAR_TYPE, IERR)
-  IF (IERR /= 0) CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR DURING DEFINITION OF SEND VAR')
+  IF (IERR /= 0) CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR DURING DEFINITION OF SEND VAR')
 ENDDO 
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    TERMINATION OF DEFINITION PHASE'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    TERMINATION OF DEFINITION PHASE'
+WRITE(output_unit,*) '==========================================================================='
 !
 CALL OASIS_ENDDEF(IERR)
-IF(IERR /= 0) CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR')
+IF(IERR /= 0) CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR')
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '    SEND AND RECEIVE ARRAYS'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '    SEND AND RECEIVE ARRAYS'
+WRITE(output_unit,*) '==========================================================================='
 !
 ALLOCATE(FIELD_RECV(VAR_ACTUAL_SHAPE(2), VAR_ACTUAL_SHAPE(4)), STAT=IERR)
-IF (IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'ERROR ALLOCATING FIELD_RECV'
+IF (IERR /= 0 ) WRITE(output_unit,*) 'ERROR ALLOCATING FIELD_RECV'
 !
 ALLOCATE(FIELD_SEND(VAR_ACTUAL_SHAPE(2), VAR_ACTUAL_SHAPE(4),NB_SEND_FIELDS),STAT=IERR)
-IF (IERR /= 0 ) WRITE(IOUTDIAG_UNIT,*) 'ERROR ALLOCATING FIELD_SEND'
+IF (IERR /= 0 ) WRITE(output_unit,*) 'ERROR ALLOCATING FIELD_SEND'
 !
 DEALLOCATE(IL_PARAL)
 !
@@ -275,24 +265,24 @@ DO IB=1, IL_NB_TIME_STEPS
   !
   ITAP_SEC = DELTA_T * (IB-1) ! Time
   !
-  WRITE(IOUTDIAG_UNIT,*) 'CURRENT TIME : ', ITAP_SEC
+  WRITE(output_unit,*) 'CURRENT TIME : ', ITAP_SEC
   !
   ! Get the field from coupled model (atmosphere/wave/ocean)
   ! -------------------------------------------------------
   DO IND=1, NB_RECV_FIELDS
     FIELD_RECV=FIELD_INI
     CALL OASIS_GET(VAR_ID(IND),ITAP_SEC, FIELD_RECV, IERR)
-    WRITE(IOUTDIAG_UNIT,*) 'RECEIVE FIELD : ', CRCVFIELDS(IND) , ' => ', ITAP_SEC, MINVAL(FIELD_RECV), MAXVAL(FIELD_RECV)
+    WRITE(output_unit,*) 'RECEIVE FIELD : ', CRCVFIELDS(IND) , ' => ', ITAP_SEC, MINVAL(FIELD_RECV), MAXVAL(FIELD_RECV)
     IF ( IERR .NE. OASIS_Ok .AND. IERR .LT. OASIS_Recvd) THEN
-      WRITE (IOUTDIAG_UNIT,*) 'OASIS_GET ABORT BY TOY MODEL COMPID ',ICOMP_ID
-      CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING OASIS_GET')
+      WRITE (output_unit,*) 'OASIS_GET ABORT BY TOY MODEL COMPID ',ICOMP_ID
+      CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING OASIS_GET')
     ENDIF
   ENDDO
   !
   ! Send the field to coupled model (atmosphere/wave/ocean)
   ! -------------------------------------------------------
   ! 
-  CALL FUNCTION_SENT(IOUTDIAG_UNIT,INDI_BEG,INDI_END,INDJ_BEG,INDJ_END, &
+  CALL FUNCTION_SENT(output_unit,INDI_BEG,INDI_END,INDJ_BEG,INDJ_END, &
                      VAR_ACTUAL_SHAPE(2), VAR_ACTUAL_SHAPE(4), NB_SEND_FIELDS, &
                      RESHAPE(GLOBALGRID_LON(INDI_BEG:INDI_END,INDJ_BEG:INDJ_END),&
                      (/ VAR_ACTUAL_SHAPE(2), VAR_ACTUAL_SHAPE(4) /)), &
@@ -302,29 +292,28 @@ DO IB=1, IL_NB_TIME_STEPS
                      CTYPE_FCT, VALUE, CNAME_FILE, CSNDFIELDS)
   !		     
   DO IND=1, NB_SEND_FIELDS 
-    WRITE(IOUTDIAG_UNIT,*) 'SEND FIELD : ', CSNDFIELDS(IND), ' => ', ITAP_SEC, MINVAL(FIELD_SEND), MAXVAL(FIELD_SEND)
+    WRITE(output_unit,*) 'SEND FIELD : ', CSNDFIELDS(IND), ' => ', ITAP_SEC, MINVAL(FIELD_SEND), MAXVAL(FIELD_SEND)
     CALL OASIS_PUT(VAR_ID(IND+NB_RECV_FIELDS),ITAP_SEC, FIELD_SEND(:,:,IND), IERR)
     IF ( IERR .NE. OASIS_Ok .AND. IERR .LT. OASIS_Sent) THEN
-      WRITE (IOUTDIAG_UNIT,*) 'OASIS_PUT ABORT BY TOY MODEL COMPID ',ICOMP_ID
-      CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING OASIS_PUT')
+      WRITE (output_unit,*) 'OASIS_PUT ABORT BY TOY MODEL COMPID ',ICOMP_ID
+      CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'PROBLEM DURING OASIS_PUT')
     ENDIF
   ENDDO
   !
 ENDDO
 !
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
-WRITE(IOUTDIAG_UNIT,*) '   TERMINATION'
-WRITE(IOUTDIAG_UNIT,*) '==========================================================================='
+WRITE(output_unit,*) '==========================================================================='
+WRITE(output_unit,*) '   TERMINATION'
+WRITE(output_unit,*) '==========================================================================='
 !
-WRITE(IOUTDIAG_UNIT,*) '----- CALL OASIS_TERMINATE'
+WRITE(output_unit,*) '----- CALL OASIS_TERMINATE'
 CALL OASIS_TERMINATE(IERR)
 IF(IERR /= 0) THEN
-  CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'ERROR DURING OASIS_TERMINATE')
+  CALL oasis_abort(ICOMP_ID,CMODEL_NAME,'ERROR DURING OASIS_TERMINATE')
 ENDIF
 !
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-! Close the log file
-CLOSE(UNIT=IOUTDIAG_UNIT)
+CLOSE(UNIT=output_unit)
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
 ! ##############################################################################
