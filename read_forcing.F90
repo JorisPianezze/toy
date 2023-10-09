@@ -1,76 +1,86 @@
-  !**********************************************************************************************
-  SUBROUTINE READ_FORCING (IOUTDIAG_UNIT,NBFIELDS,INDI_BEG,INDI_END,INDJ_BEG,INDJ_END,IB, DATA_FILENAME,CSNDFIELDS, &
-                           & NLON, NLAT, GRID_LON, GRID_LAT, FORCING_DATA)
-  !**********************************************************************************************
-  !
-  USE NETCDF
-  IMPLICIT NONE
-  !
-  INTEGER :: ILOOP
-  !
-  INTEGER :: NCID, NDIMS, UNLIMDIMID
-  INTEGER :: IL_LON_ID, IL_LAT_ID, IL_TIME_ID 
-  !
-  INTEGER, DIMENSION(3) :: NDIM
-  INTEGER :: NX, NY, NT
-  CHARACTER(LEN=50), DIMENSION(3) :: CNAME_DIM
-  CHARACTER(LEN=50) :: VNAME
-  INTEGER, DIMENSION(2) :: DIMIDS
-  INTEGER :: XTYPE, VARID
-  !
-  INTEGER, INTENT(IN) :: IOUTDIAG_UNIT, NBFIELDS
-  INTEGER, INTENT(IN) :: INDI_BEG,INDI_END,INDJ_BEG,INDJ_END, IB
-  INTEGER, INTENT(IN) :: NLON, NLAT, GRID_LON, GRID_LAT
-  !
-  INTEGER, DIMENSION(NBFIELDS) :: IL_VAR_ID
-  !
-  CHARACTER(len=30), INTENT(IN) :: DATA_FILENAME
-  CHARACTER(LEN=8), DIMENSION(10), INTENT(IN) :: CSNDFIELDS
-  !
-  INTEGER, DIMENSION(3) :: ILA_DIM
-  !
-  REAL, ALLOCATABLE, DIMENSION(:,:,:) :: READING_DATA
-  REAL, DIMENSION(NLON,NLAT,10), INTENT(OUT) :: FORCING_DATA
-  !
-  !
-  !*********** OPEN NCDF FILE
-  CALL handle_netcdf_errors(NF90_OPEN(DATA_FILENAME, NF90_NOWRITE, NCID),__LINE__,__FILE__)
-  !
-  CALL handle_netcdf_errors(NF90_INQUIRE(NCID, NDIMENSIONS=NDIMS, UNLIMITEDDIMID=UNLIMDIMID),__LINE__,__FILE__)
-  !
-  CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(NCID,1,CNAME_DIM(1),NDIM(1)),__LINE__,__FILE__)
-  CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(NCID,2,CNAME_DIM(2),NDIM(2)),__LINE__,__FILE__)
-  CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(NCID,3,CNAME_DIM(3),NDIM(3)),__LINE__,__FILE__)
-  !
-  DO ILOOP=1, 3
-    IF ( (CNAME_DIM(ILOOP) .EQ. 'ni') .OR. (CNAME_DIM(ILOOP) .EQ. 'longitude') .OR. (CNAME_DIM(ILOOP) .EQ. 'nlon') &
-                                      .OR. (CNAME_DIM(ILOOP) .EQ. 'xi_rho') ) THEN
-      NX=NDIM(ILOOP)
-    ELSE IF ( (CNAME_DIM(ILOOP) .EQ. 'nj') .OR. (CNAME_DIM(ILOOP) .EQ. 'latitude') .OR. (CNAME_DIM(ILOOP) .EQ. 'nlat') &
-                                           .OR. (CNAME_DIM(ILOOP) .EQ. 'eta_rho') ) THEN
-      NY=NDIM(ILOOP)
-    ELSE IF (CNAME_DIM(ILOOP) .EQ. 'time' .OR. (CNAME_DIM(ILOOP) .EQ. 'ntime') ) THEN
-      NT=NDIM(ILOOP)
-    END IF
-  END DO
-  !
-  ALLOCATE(READING_DATA(NX,NY,NT))
-  !
+! #########################################################
+SUBROUTINE read_forcing (output_unit,nsend_fields,INDI_BEG,INDI_END,INDJ_BEG,INDJ_END,ind_time, &
+                         forcing_file_name,name_send_fields, &
+                         NLON, NLAT, send_fields)
+! #########################################################
 
-  !CALL HDLERR( NF90_INQ_VARID(NCID, 'longitude', IL_LON_ID),__LINE__,__FILE__)
-  !CALL HDLERR( NF90_INQ_VARID(NCID, 'latitude', IL_LAT_ID),__LINE__,__FILE__)
-  !CALL HDLERR( NF90_INQ_VARID(NCID, 'time', IL_TIME_ID),__LINE__,__FILE__ )
+USE netcdf
+USE parameters
 
-  DO ILOOP=1, NBFIELDS
-    CALL handle_netcdf_errors( NF90_INQ_VARID(NCID, TRIM(CSNDFIELDS(ILOOP)), IL_VAR_ID(ILOOP)), __LINE__,__FILE__ )
-    CALL handle_netcdf_errors(NF90_INQUIRE_VARIABLE(NCID,IL_VAR_ID(ILOOP),VNAME,XTYPE,NDIMS,ILA_DIM), __LINE__,__FILE__)
-    CALL handle_netcdf_errors(NF90_INQ_VARID(NCID,VNAME,VARID), __LINE__,__FILE__)
-    CALL handle_netcdf_errors(NF90_GET_VAR(NCID,VARID,READING_DATA), __LINE__,__FILE__)
-    FORCING_DATA(:,:,ILOOP)=RESHAPE(READING_DATA(INDI_BEG:INDI_END,INDJ_BEG:INDJ_END,IB+1),&
-                           (/ NLON, NLAT /))
-  END DO
-  !
-  !************* CLOSE NCDF FILE
-  CALL handle_netcdf_errors( NF90_CLOSE(NCID), __LINE__,__FILE__ )
-  !
-END SUBROUTINE READ_FORCING
+IMPLICIT NONE
+
+INTEGER :: ILOOP
+
+INTEGER :: file_id, NDIMS, UNLIMDIMID
+INTEGER :: IL_LON_ID, IL_LAT_ID, IL_TIME_ID 
+
+INTEGER, DIMENSION(3) :: NDIM
+INTEGER :: NX, NY, NT
+CHARACTER(LEN=50), DIMENSION(3) :: CNAME_DIM
+CHARACTER(LEN=50) :: VNAME
+INTEGER, DIMENSION(2) :: DIMIDS
+INTEGER :: XTYPE, VARID
+
+INTEGER, INTENT(IN) :: output_unit, nsend_fields
+INTEGER, INTENT(IN) :: INDI_BEG,INDI_END,INDJ_BEG,INDJ_END, ind_time
+INTEGER, INTENT(IN) :: NLON, NLAT
+
+INTEGER, DIMENSION(nsend_fields) :: IL_VAR_ID
+
+CHARACTER(len=len_file_names), INTENT(IN) :: forcing_file_name
+CHARACTER(LEN=len_exchanged_fields), DIMENSION(nmax_send_fields), INTENT(IN) :: name_send_fields
+
+INTEGER, DIMENSION(3) :: ILA_DIM
+
+REAL, ALLOCATABLE, DIMENSION(:,:,:) :: forcing_data
+REAL, DIMENSION(NLON,NLAT,10), INTENT(OUT) :: send_fields
+
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!   Open netcdf file
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CALL handle_netcdf_errors( nf90_open(forcing_file_name, nf90_nowrite, file_id), __LINE__, __FILE__ )
+
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!   Read dimensions
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CALL handle_netcdf_errors(NF90_INQUIRE(file_id, NDIMENSIONS=NDIMS, UNLIMITEDDIMID=UNLIMDIMID),__LINE__,__FILE__)
+!
+CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(file_id,1,CNAME_DIM(1),NDIM(1)),__LINE__,__FILE__)
+CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(file_id,2,CNAME_DIM(2),NDIM(2)),__LINE__,__FILE__)
+CALL handle_netcdf_errors(NF90_INQUIRE_DIMENSION(file_id,3,CNAME_DIM(3),NDIM(3)),__LINE__,__FILE__)
+!
+DO ILOOP=1, 3
+  IF ( (CNAME_DIM(ILOOP) .EQ. 'ni') .OR. (CNAME_DIM(ILOOP) .EQ. 'longitude') .OR. (CNAME_DIM(ILOOP) .EQ. 'nlon') &
+                                    .OR. (CNAME_DIM(ILOOP) .EQ. 'xi_rho') ) THEN
+    NX=NDIM(ILOOP)
+  ELSE IF ( (CNAME_DIM(ILOOP) .EQ. 'nj') .OR. (CNAME_DIM(ILOOP) .EQ. 'latitude') .OR. (CNAME_DIM(ILOOP) .EQ. 'nlat') &
+                                         .OR. (CNAME_DIM(ILOOP) .EQ. 'eta_rho') ) THEN
+    NY=NDIM(ILOOP)
+  ELSE IF (CNAME_DIM(ILOOP) .EQ. 'time' .OR. (CNAME_DIM(ILOOP) .EQ. 'ntime') ) THEN
+    NT=NDIM(ILOOP)
+  END IF
+END DO
+
+ALLOCATE(forcing_data(NX,NY,NT))
+
+!CALL HDLERR( NF90_INQ_VARID(file_id, 'longitude', IL_LON_ID),__LINE__,__FILE__)
+!CALL HDLERR( NF90_INQ_VARID(file_id, 'latitude', IL_LAT_ID),__LINE__,__FILE__)
+!CALL HDLERR( NF90_INQ_VARID(file_id, 'time', IL_TIME_ID),__LINE__,__FILE__ )
+
+DO ILOOP=1, nsend_fields
+  CALL handle_netcdf_errors( NF90_INQ_VARID(file_id, TRIM(name_send_fields(ILOOP)), IL_VAR_ID(ILOOP)), __LINE__,__FILE__ )
+  CALL handle_netcdf_errors(NF90_INQUIRE_VARIABLE(file_id,IL_VAR_ID(ILOOP),VNAME,XTYPE,NDIMS,ILA_DIM), __LINE__,__FILE__)
+  CALL handle_netcdf_errors(NF90_INQ_VARID(file_id,VNAME,VARID), __LINE__,__FILE__)
+  CALL handle_netcdf_errors(NF90_GET_VAR(file_id,VARID,forcing_data), __LINE__,__FILE__)
+  send_fields(:,:,ILOOP)=RESHAPE(forcing_data(INDI_BEG:INDI_END,INDJ_BEG:INDJ_END,ind_time+1),&
+                         (/ NLON, NLAT /))
+END DO
+
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!   Close netcdf file
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CALL handle_netcdf_errors( nf90_close(file_id), __LINE__, __FILE__ )
+
+! #########################################################
+END SUBROUTINE read_forcing
+! #########################################################
