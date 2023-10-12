@@ -19,7 +19,7 @@ INTEGER,                       INTENT(  OUT) :: nlon, nlat
 
 INTEGER :: file_id, lon_id, nlon_id, lat_id, nlat_id
                
-WRITE(output_unit,*) 'Reading input file ', grid_file_name
+WRITE(output_unit,*) ' Reading input file ', grid_file_name
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !   Open netcdf file
@@ -43,7 +43,7 @@ CALL handle_netcdf_errors( nf90_inquire_dimension(file_id, nlat_id, len=nlat), _
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CALL handle_netcdf_errors( nf90_close(file_id), __LINE__, __FILE__ )
 
-WRITE(output_unit,*) 'Global dimensions nlon=', nlon,' nlat=', nlat
+WRITE(output_unit,*) ' Global dimensions nlon=', nlon,' nlat=', nlat
 
 ! #########################################################
 END SUBROUTINE read_dimgrid

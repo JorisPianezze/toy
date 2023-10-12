@@ -16,7 +16,7 @@ INTEGER,          INTENT(IN) :: istatus, current_line
 CHARACTER(LEN=*), INTENT(IN) :: current_file
 
 IF (istatus .NE. nf90_noerr) THEN
-  WRITE (*,*) 'NetCDF problem at line', current_line, 'in ', current_file, ' -> CALL ABORT'
+  WRITE (*,*) ' NetCDF problem at line', current_line, 'in ', current_file, ' -> CALL ABORT'
   CALL ABORT
 ENDIF
 

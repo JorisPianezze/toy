@@ -64,7 +64,7 @@ ELSE IF (type_send .EQ. 'files') THEN
 !   type_send not supported
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELSE
-  WRITE(output_unit,*) 'type_send not supported : ', type_send
+  WRITE(output_unit,*) ' type_send not supported : ', type_send
   CALL abort
 END IF
 

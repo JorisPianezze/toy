@@ -16,7 +16,7 @@ INTEGER              :: il_imjm, il_partj
 il_imjm  = id_im*id_jm
 il_partj = id_jm/id_npes  ! Nbr of latitude circles in the partition
 
-WRITE (id_unit,*) 'BOX partitioning'
+WRITE (id_unit,*) ' BOX partitioning'
 ! Each process is responsible for a reduce rectangular box
 
 id_paral (1) = 2

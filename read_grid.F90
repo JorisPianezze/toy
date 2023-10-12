@@ -43,22 +43,22 @@ CALL handle_netcdf_errors( nf90_inq_varid(file_id, 'mask', mask_id), __LINE__, _
 !   Read grid data
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CALL handle_netcdf_errors( nf90_get_var(file_id,   lon_id, lon), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid longitudes reading done'
+WRITE(output_unit,*) ' Global grid longitudes reading done'
 
 CALL handle_netcdf_errors( nf90_get_var(file_id,   lat_id, lat), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid latitudes reading done'
+WRITE(output_unit,*) ' Global grid latitudes reading done'
 
 CALL handle_netcdf_errors( nf90_get_var(file_id,  clon_id, clo), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid longitude corners reading done'
+WRITE(output_unit,*) ' Global grid longitude corners reading done'
 
 CALL handle_netcdf_errors( nf90_get_var(file_id,  clat_id, cla), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid latitude corners reading done'
+WRITE(output_unit,*) ' Global grid latitude corners reading done'
 
 CALL handle_netcdf_errors( nf90_get_var(file_id,   srf_id, srf), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid surfaces reading done'
+WRITE(output_unit,*) ' Global grid surfaces reading done'
 
 CALL handle_netcdf_errors( nf90_get_var(file_id, mask_id, mask), __LINE__, __FILE__ )
-WRITE(output_unit,*) 'Global grid mask reading done'
+WRITE(output_unit,*) ' Global grid mask reading done'
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !   Close netcdf file
